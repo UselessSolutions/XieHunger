@@ -6,13 +6,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import useless.xiehunger.XieHunger;
-import useless.xiehunger.XieHungerDisplay;
 
 @Mixin(value = Minecraft.class, remap = false)
 public class MinecraftMixin {
 	@Inject(method = "runTick()V", at = @At("HEAD"))
 	private void runTick(CallbackInfo ci){
 		XieHunger.instance.gameTick((Minecraft)(Object)this);
-		XieHungerDisplay.instance.display((Minecraft)(Object)this);
 	}
 }
