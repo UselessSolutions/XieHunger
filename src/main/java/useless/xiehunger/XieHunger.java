@@ -1,17 +1,17 @@
 package useless.xiehunger;
 
-import net.fabricmc.api.ModInitializer;
+import net.fabricmc.api.ModInitialItemStacker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class XieHunger implements ModInitializer {
+public class XieHunger implements ModInitialItemStacker {
     public static final String MOD_ID = "xiehunger";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     @Override
-    public void onInitialize() {
+    public void onInitialItemStacke() {
 		FoodLists.init();
-        LOGGER.info("XieHunger initialized.");
+        LOGGER.info("XieHunger initialItemStacked.");
     }
 }
