@@ -25,9 +25,10 @@ public class GuiIngameMixin extends Gui {
 		IHunger hPlayer = (IHunger)mc.thePlayer;
 		int width = mc.resolution.scaledWidth;
 		int height = mc.resolution.scaledHeight;
+		int sp = (int)(this.mc.gameSettings.screenPadding.value * (float)height / 8.0f);
 		if (XieHunger.useBars) {
 			int displayX = width / 2 - 91;
-			int displayY = height - 41;
+			int displayY = height - 41 - sp;
 
 			if (mc.thePlayer.isUnderLiquid(Material.water)) {
 				displayY -= 9;
@@ -91,7 +92,7 @@ public class GuiIngameMixin extends Gui {
 
 		} else {
 			int xieHungerIconX = width / 2 - 8;
-			int xieHungerIconY = height - 40;
+			int xieHungerIconY = height - 40 - sp;
 
 			if (XieHunger.hungerEnabled) {
 				drawTexturedModalRect(xieHungerIconX, xieHungerIconY + 8, hPlayer.getHungerState() * 8, 8, 8, 8);
