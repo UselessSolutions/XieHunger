@@ -4,7 +4,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.entity.player.EntityPlayerSP;
 import net.minecraft.core.item.ItemFood;
 import net.minecraft.core.util.helper.DamageType;
 import org.slf4j.Logger;
@@ -20,9 +19,8 @@ public class XieHunger implements ModInitializer {
     @Override
     public void onInitialize() {
 		FoodLists.init();
-        LOGGER.info("XieHunger initialItemStacked.");
+        LOGGER.info("XieHunger initialized.");
     }
-	static final String iconFile = "/Xie/img/xiehunger.png";
 	public static int hungerRate = 60;
 	public static boolean passiveRegen = false;
 	public static int hungerMax = 20;
@@ -114,10 +112,6 @@ public class XieHunger implements ModInitializer {
 		fatigueRate[SNEAKING] = cfg.getInt("Fatigue Rates.sneakingRate");
 		fatigueRate[RESTING] = cfg.getInt("Fatigue Rates.restingRate");
 		fatigueRate[SLEEPING] = cfg.getInt("Fatigue Rates.sleepingRate");
-	}
-
-	public XieHunger() {
-		FoodLists.init();
 	}
 
 	public void ModsLoaded() { // For integrations with Xie's other mods
