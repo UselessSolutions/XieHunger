@@ -22,7 +22,7 @@
     ]
   },
   "mixins": [
-      "examplemod.mixins.json"
+    "xiehunger.mixins.json"
   ],
 
   "depends": {
