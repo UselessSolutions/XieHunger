@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import useless.xiehunger.XieHunger;
+import useless.xiehunger.IHunger;
 
 @Mixin(value = ItemFood.class, remap = false)
 public class ItemFoodMixin {
@@ -18,6 +18,6 @@ public class ItemFoodMixin {
 
 	@Inject(method = "onItemRightClick(Lnet/minecraft/core/item/ItemStack;Lnet/minecraft/core/world/World;Lnet/minecraft/core/entity/player/EntityPlayer;)Lnet/minecraft/core/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/entity/player/EntityPlayer;heal(I)V"))
 	private void healHunger(ItemStack itemstack, World world, EntityPlayer entityplayer, CallbackInfoReturnable<ItemStack> cir){
-		XieHunger.feed(healAmount, (ItemFood)(Object)this);
+		((IHunger)entityplayer).feed(healAmount, (ItemFood)(Object)this);
 	}
 }

@@ -5,9 +5,9 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "BlockCakeMixin",
+    "EntityPlayerMixin",
     "GuiIngameMixin",
-    "ItemFoodMixin",
-    "MinecraftMixin"
+    "ItemFoodMixin"
   ],
   "client": [
   ],

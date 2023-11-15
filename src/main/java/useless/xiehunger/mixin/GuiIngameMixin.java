@@ -7,10 +7,10 @@ import net.minecraft.core.block.material.Material;
 import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import useless.xiehunger.IHunger;
 import useless.xiehunger.XieHunger;
 
 @Mixin(value = GuiIngame.class, remap = false)
@@ -22,6 +22,7 @@ public class GuiIngameMixin extends Gui {
 	private void drawHunger(float partialTicks, boolean flag, int mouseX, int mouseY, CallbackInfo ci){
 		GL11.glBindTexture(3553, mc.renderEngine.getTexture("/assets/xiehunger/gui/xiehunger.png"));
 		GL11.glColor4f(1,1,1,1);
+		IHunger hPlayer = (IHunger)mc.thePlayer;
 		int width = mc.resolution.scaledWidth;
 		int height = mc.resolution.scaledHeight;
 		if (XieHunger.useBars) {
@@ -46,7 +47,7 @@ public class GuiIngameMixin extends Gui {
 					skullY += 3;
 				}
 
-				for(fat4 = 0; fat4 < XieHunger.hunger; ++fat4) {
+				for(fat4 = 0; fat4 < hPlayer.getHunger(); ++fat4) {
 					drawTexturedModalRect(displayX + xOffset, displayY + skullY, 8, 0, 4, 3);
 					xOffset += 4;
 				}
@@ -59,7 +60,7 @@ public class GuiIngameMixin extends Gui {
 					skullY += 3;
 				}
 
-				for(fat4 = 0; fat4 < XieHunger.thirst; ++fat4) {
+				for(fat4 = 0; fat4 < hPlayer.getThirst(); ++fat4) {
 					drawTexturedModalRect(displayX + xOffset, displayY + skullY, 12, 0, 4, 3);
 					xOffset += 4;
 				}
@@ -68,7 +69,7 @@ public class GuiIngameMixin extends Gui {
 			if (XieHunger.fatigueEnabled) {
 				xOffset = 0;
 				int yOffset = 6;
-				fat4 = XieHunger.fatigueScaled / 4;
+				fat4 = hPlayer.getFatigueScaled() / 4;
 
 				int rem;
 				for(rem = 0; rem < fat4; ++rem) {
@@ -76,7 +77,7 @@ public class GuiIngameMixin extends Gui {
 					xOffset += 4;
 				}
 
-				rem = XieHunger.fatigueScaled % 4;
+				rem = hPlayer.getFatigueScaled() % 4;
 				if (rem > 0) {
 					drawTexturedModalRect(displayX + xOffset, displayY + yOffset, 16, 0, rem, 3);
 				}
@@ -84,7 +85,7 @@ public class GuiIngameMixin extends Gui {
 
 			xOffset = width / 2 - 8;
 			skullY = height - 40;
-			if (XieHunger.dying && (XieHunger.hungerEnabled || XieHunger.thirstEnabled || XieHunger.fatigueEnabled)) {
+			if (hPlayer.isDying() && (XieHunger.hungerEnabled || XieHunger.thirstEnabled || XieHunger.fatigueEnabled)) {
 				drawTexturedModalRect(xOffset, skullY, 32, 0, 8, 8);
 			}
 
@@ -93,18 +94,18 @@ public class GuiIngameMixin extends Gui {
 			int xieHungerIconY = height - 40;
 
 			if (XieHunger.hungerEnabled) {
-				drawTexturedModalRect(xieHungerIconX, xieHungerIconY + 8, XieHunger.hungerState * 8, 8, 8, 8);
+				drawTexturedModalRect(xieHungerIconX, xieHungerIconY + 8, hPlayer.getHungerState() * 8, 8, 8, 8);
 			}
 
 			if (XieHunger.thirstEnabled) {
-				drawTexturedModalRect(xieHungerIconX + 8, xieHungerIconY + 8, XieHunger.thirstState * 8, 16, 8, 8);
+				drawTexturedModalRect(xieHungerIconX + 8, xieHungerIconY + 8, hPlayer.getThirstState() * 8, 16, 8, 8);
 			}
 
 			if (XieHunger.fatigueEnabled) {
-				drawTexturedModalRect(xieHungerIconX + 8, xieHungerIconY, XieHunger.fatigueState * 8, 24, 8, 8);
+				drawTexturedModalRect(xieHungerIconX + 8, xieHungerIconY, hPlayer.getFatigueState() * 8, 24, 8, 8);
 			}
 
-			if (XieHunger.dying && (XieHunger.hungerEnabled || XieHunger.thirstEnabled || XieHunger.fatigueEnabled)) {
+			if (hPlayer.isDying() && (XieHunger.hungerEnabled || XieHunger.thirstEnabled || XieHunger.fatigueEnabled)) {
 				drawTexturedModalRect(xieHungerIconX, xieHungerIconY, 32, 0, 8, 8);
 			}
 		}
