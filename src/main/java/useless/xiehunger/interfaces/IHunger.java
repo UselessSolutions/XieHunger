@@ -1,4 +1,4 @@
-package useless.xiehunger;
+package useless.xiehunger.interfaces;
 
 import net.minecraft.core.item.ItemFood;
 
@@ -14,4 +14,5 @@ public interface IHunger {
 	int getThirst();
 	int getFatigue();
 	boolean isDying();
+	void updateHunger(int hunger, int thirst, int fatigue);
 }

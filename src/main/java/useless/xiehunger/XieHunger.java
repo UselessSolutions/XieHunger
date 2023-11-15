@@ -5,6 +5,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import turniplabs.halplibe.helper.NetworkHelper;
 import turniplabs.halplibe.util.TomlConfigHandler;
 import turniplabs.halplibe.util.toml.Toml;
 
@@ -89,6 +90,7 @@ public class XieHunger implements ModInitializer {
     @Override
     public void onInitialize() {
 		FoodLists.init();
+		NetworkHelper.register(PacketUpdateHunger.class, false, true);
         LOGGER.info("XieHunger initialized.");
     }
 }

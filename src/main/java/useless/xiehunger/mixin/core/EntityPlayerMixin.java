@@ -1,20 +1,21 @@
 package useless.xiehunger.mixin.core;
 
 import com.mojang.nbt.CompoundTag;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.EntityLiving;
 import net.minecraft.core.entity.player.EntityPlayer;
 import net.minecraft.core.item.ItemFood;
 import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.world.World;
+import net.minecraft.server.entity.player.EntityPlayerMP;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import useless.xiehunger.FoodLists;
-import useless.xiehunger.IHunger;
+import useless.xiehunger.PacketUpdateHunger;
+import useless.xiehunger.interfaces.IHunger;
 import useless.xiehunger.XieHunger;
 
 @Mixin(value = EntityPlayer.class, remap = false)
@@ -49,16 +50,25 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 	@Unique
 	public int fatigue = 0; // Save
 	@Unique
-	private EntityPlayer thisAs = (EntityPlayer)(Object)this;
-	@Inject(method = "tick()V", at = @At("HEAD"))
+	private int prevHunger = 0;
+	@Unique
+	private int prevThirst = 0;
+	@Unique
+	private int prevFatigue = 0;
+	@Unique
+	private final EntityPlayer thisAs = (EntityPlayer)(Object)this;
+	@Inject(method = "onLivingUpdate()V", at = @At("HEAD"))
 	private void tick(CallbackInfo ci){
-		if (++tickCounter >= XieHunger.hungerClockTickRate) {
+		if (!world.isClientSide && ++tickCounter >= XieHunger.hungerClockTickRate) {
 			tickCounter = 0;
 			hungerClockTick();
 		}
 	}
 	@Unique
 	public void hungerClockTick() {
+		prevHunger = hunger;
+		prevThirst = thirst;
+		prevFatigue = fatigue;
 		if (timeOfLastTick == 0L) {
 			timeOfLastTick = world.getWorldTime();
 		}
@@ -88,10 +98,6 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 		if (XieHunger.fatigueEnabled) {
 			this.doFatigue(scalingFactor, deltaTime);
 		}
-
-//		if (gryllsEnabled) {
-//			doGrylls(game);
-//		}
 
 		stateUpdate();
 	}
@@ -222,6 +228,10 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 		thirstState = (int)Math.floor((double) thirst / XieHunger.thirstStateFactor);
 		fatigueScaled = fatigue * XieHunger.fatigueScaledMax / XieHunger.fatigueMax;
 		fatigueState = (int)Math.floor((double)fatigue / XieHunger.fatigueStateFactor);
+
+		if (thisAs instanceof EntityPlayerMP && (hunger != prevHunger || thirst != prevThirst || fatigue != prevFatigue)){
+			((EntityPlayerMP)thisAs).playerNetServerHandler.sendPacket(new PacketUpdateHunger(hunger, thirst, fatigue));
+		}
 	}
 
 	public void feed(int amount) {
@@ -267,6 +277,14 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 	@Override
 	public boolean isDying() {
 		return dying;
+	}
+
+	@Override
+	public void updateHunger(int hunger, int thirst, int fatigue) {
+		this.hunger = hunger;
+		this.thirst = thirst;
+		this.fatigue = fatigue;
+		stateUpdate();
 	}
 
 	public void feed(int amount, ItemFood food) {
