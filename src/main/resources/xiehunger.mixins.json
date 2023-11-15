@@ -4,7 +4,9 @@
   "package": "useless.xiehunger.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "ItemFoodMixin"
+    "BlockCakeMixin",
+    "ItemFoodMixin",
+    "MinecraftMixin"
   ],
   "client": [
   ],

@@ -5,16 +5,12 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.player.EntityPlayerSP;
-import net.minecraft.core.entity.player.EntityPlayer;
 import net.minecraft.core.item.ItemFood;
+import net.minecraft.core.util.helper.DamageType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import turniplabs.halplibe.util.ConfigHandler;
 import turniplabs.halplibe.util.TomlConfigHandler;
 import turniplabs.halplibe.util.toml.Toml;
-
-import java.io.*;
-import java.util.Properties;
 
 
 public class XieHunger implements ModInitializer {
@@ -26,11 +22,6 @@ public class XieHunger implements ModInitializer {
 		FoodLists.init();
         LOGGER.info("XieHunger initialItemStacked.");
     }
-	static final String modName = "Xie Hunger";
-	static final String version = "1.7b";
-	static final String settingsFile = "hunger.ini";
-	static final String settingsPath = "/mods/Xie/";
-	static final String hungerSaveFilePath = "/mods/Xie/Hunger";
 	static final String iconFile = "/Xie/img/xiehunger.png";
 	public static int hungerRate = 60;
 	public static boolean passiveRegen = false;
@@ -44,30 +35,30 @@ public class XieHunger implements ModInitializer {
 	public static int fatigueMax = 1000;
 	public static int fatigueScaledMax = 80;
 	public static int fatigueScaled = 0;
-	public static int fatigueStateFactor;
-	public static int fatigueState;
-	private static int fatigueHeartScaleFactor;
-	public static int[] fatigueRate;
-	public static int hungerClockTickRate;
-	private static long timeOfLastTick;
-	public static boolean hungerEnabled;
-	public static boolean thirstEnabled;
-	public static boolean fatigueEnabled;
-	public static boolean useBars;
-	public static int hunger;
-	public static int thirst;
-	public static int hungerState;
-	public static int thirstState;
-	public static boolean dying;
-	private static boolean gryllsEnabled;
-	private static int tickCounter;
+	public static int fatigueStateFactor = fatigueMax / 4;
+	public static int fatigueState = 0;
+	private static int fatigueHeartScaleFactor = fatigueMax / 20;
+	public static int[] fatigueRate = new int[]{0, 2, 5, 5, 5, 5, -1, -3};
+	public static int hungerClockTickRate = 20;
+	private static long timeOfLastTick = 0L;
+	public static boolean hungerEnabled = true;
+	public static boolean thirstEnabled = true;
+	public static boolean fatigueEnabled = true;
+	public static boolean useBars = true;
+	public static int hunger = 0;
+	public static int thirst = 0;
+	public static int hungerState = 0;
+	public static int thirstState = 0;
+	public static boolean dying = false;
+	private static boolean gryllsEnabled = false;
+	private static int tickCounter = 0;
 	private String currentWorld = "";
 	private int saveStateTick = 0;
 	private final int ticksBetweenSaves = 40;
-	private static int hungerTicks;
-	private static int thirstTicks;
+	private static int hungerTicks = 0;
+	private static int thirstTicks = 0;
 	private int fatigueOverflow = 0;
-	private static int gryllsTick;
+	private static int gryllsTick = 0;
 	public static final int CONSTANT = 0;
 	public static final int WALKING = 1;
 	public static final int JUMPING = 2;
@@ -76,11 +67,57 @@ public class XieHunger implements ModInitializer {
 	public static final int SNEAKING = 5;
 	public static final int RESTING = 6;
 	public static final int SLEEPING = 7;
+	public static XieHunger instance = new XieHunger();
+	public static TomlConfigHandler cfg;
+	static {
+		ModContainer thisMod = FabricLoader.getInstance().getModContainer("xiehunger").get();
+		Toml defaults = new Toml(thisMod.getMetadata().getName() + " " + thisMod.getMetadata().getVersion() + " settings");
+		defaults.addCategory("Toggles")
+			.addEntry("enableHunger", hungerEnabled)
+			.addEntry("enableThirst", thirstEnabled)
+			.addEntry("enableFatigue", fatigueEnabled)
+			.addEntry("waterDrinkable","Water drinkable by crouching", waterDrinkable);
+		defaults.addCategory("Timings")
+			.addEntry("clockRate", "Game ticks per mod tick",  hungerClockTickRate)
+			.addEntry("hungerRate", "Ticks between increasing hunger or thirst", hungerRate)
+			.addEntry("thirstRate", thirstRate);
+		defaults.addCategory("Saturated Benefits")
+			.addEntry("passiveRegen", passiveRegen);
+		defaults.addCategory("GUI")
+			.addEntry("useBars", useBars);
+		defaults.addCategory("Fatigue Rates")
+			.addEntry("constantRate", fatigueRate[CONSTANT])
+			.addEntry("walkingRate", fatigueRate[WALKING])
+			.addEntry("jumpingRate", fatigueRate[JUMPING])
+			.addEntry("swimmingRate", fatigueRate[SWIMMING])
+			.addEntry("swingingRate", fatigueRate[SWINGING])
+			.addEntry("sneakingRate", fatigueRate[SNEAKING])
+			.addEntry("restingRate", fatigueRate[RESTING])
+			.addEntry("sleepingRate", fatigueRate[SLEEPING]);
+
+		cfg = new TomlConfigHandler(MOD_ID, defaults);
+		hungerEnabled = cfg.getBoolean("Toggles.enableHunger");
+		thirstEnabled = cfg.getBoolean("Toggles.enableThirst");
+		fatigueEnabled = cfg.getBoolean("Toggles.enableFatigue");
+		waterDrinkable = cfg.getBoolean("Toggles.waterDrinkable");
+		hungerClockTickRate = cfg.getInt("Timings.clockRate");
+		hungerRate = cfg.getInt("Timings.hungerRate");
+		thirstRate = cfg.getInt("Timings.thirstRate");
+		passiveRegen = cfg.getBoolean("Saturated Benefits.passiveRegen");
+		useBars = cfg.getBoolean("GUI.useBars");
+
+		fatigueRate[CONSTANT] = cfg.getInt("Fatigue Rates.constantRate");
+		fatigueRate[WALKING] = cfg.getInt("Fatigue Rates.walkingRate");
+		fatigueRate[JUMPING] = cfg.getInt("Fatigue Rates.jumpingRate");
+		fatigueRate[SWIMMING] = cfg.getInt("Fatigue Rates.swimmingRate");
+		fatigueRate[SWINGING] = cfg.getInt("Fatigue Rates.swingingRate");
+		fatigueRate[SNEAKING] = cfg.getInt("Fatigue Rates.sneakingRate");
+		fatigueRate[RESTING] = cfg.getInt("Fatigue Rates.restingRate");
+		fatigueRate[SLEEPING] = cfg.getInt("Fatigue Rates.sleepingRate");
+	}
 
 	public XieHunger() {
 		FoodLists.init();
-//		ModLoader.SetInGameHook(this, true, true); Commands sent to the risugamis modloader
-//		ModLoader.SetInGUIHook(this, true, true);
 	}
 
 	public void ModsLoaded() { // For integrations with Xie's other mods
@@ -97,17 +134,8 @@ public class XieHunger implements ModInitializer {
 //		}
 
 	}
-
-	public boolean OnTickInGame(Minecraft game) {
-		this.gameTick(game);
-		return true;
-	}
-
-	public void OnTickInGui(Minecraft game) {
-		this.gameTick(game);
-	}
-
 	public void gameTick(Minecraft game) {
+		if (game.theWorld == null) return;
 		if (!this.currentWorld.equals(game.theWorld.getLevelData().getWorldName())) {
 //			loadStateFromFile(game);
 			resetState(); // TODO replace with proper save/load system
@@ -130,11 +158,14 @@ public class XieHunger implements ModInitializer {
 		if (timeOfLastTick == 0L) {
 			timeOfLastTick = game.theWorld.getWorldTime();
 		}
+		LOGGER.info("Hunger" + hunger);
+		LOGGER.info("Thirst" + thirst);
+		LOGGER.info("Fatigue" + fatigue);
 
 		long scalingFactor = 1L;
-		long dt = game.theWorld.getWorldTime() - timeOfLastTick;
-		if (dt > (long)hungerClockTickRate) {
-			scalingFactor = dt / (long)hungerClockTickRate;
+		long deltaTime = game.theWorld.getWorldTime() - timeOfLastTick;
+		if (deltaTime > (long)hungerClockTickRate) {
+			scalingFactor = deltaTime / (long)hungerClockTickRate;
 		}
 
 		timeOfLastTick = game.theWorld.getWorldTime();
@@ -151,7 +182,7 @@ public class XieHunger implements ModInitializer {
 		}
 
 		if (fatigueEnabled) {
-			this.doFatigue(game, scalingFactor, dt);
+			this.doFatigue(game, scalingFactor, deltaTime);
 		}
 
 //		if (gryllsEnabled) {
@@ -229,22 +260,21 @@ public class XieHunger implements ModInitializer {
 
 	}
 
-	private void doFatigue(Minecraft game, long scale, long dt) {
-		fatigue = (int)((long)fatigue + (long)fatigueRate[0] * scale);
+	private void doFatigue(Minecraft game, long scale, long deltaTime) {
+		fatigue = (int)((long)fatigue + (long)fatigueRate[CONSTANT] * scale);
 		boolean resting = true;
-		if (dt >= 1200L) {
-			fatigue = (int)((long)fatigue + (long)fatigueRate[7] * scale);
+		if (deltaTime >= 1200L) { // Full sleep
+			fatigue = (int)((long)fatigue + (long)fatigueRate[SLEEPING] * scale);
 			if (fatigue < 0) {
 				fatigue = 0;
 			}
 
-			resting = false;
 		} else {
 			if (game.thePlayer.input.moveStrafe  != 0.0F || game.thePlayer.input.moveForward != 0.0F) {
 				if (game.thePlayer.isInWater()) {
-					fatigue = (int)((long)fatigue + (long)fatigueRate[3] * scale);
+					fatigue = (int)((long)fatigue + (long)fatigueRate[SWIMMING] * scale);
 				} else {
-					fatigue = (int)((long)fatigue + (long)fatigueRate[1] * scale);
+					fatigue = (int)((long)fatigue + (long)fatigueRate[WALKING] * scale);
 				}
 
 				resting = false;
@@ -252,21 +282,21 @@ public class XieHunger implements ModInitializer {
 
 			if (game.thePlayer.input.jump) {
 				resting = false;
-				fatigue = (int)((long)fatigue + (long)fatigueRate[2] * scale);
+				fatigue = (int)((long)fatigue + (long)fatigueRate[JUMPING] * scale);
 			}
 
 			if (game.thePlayer.isSwinging) {
 				resting = false;
-				fatigue = (int)((long)fatigue + (long)fatigueRate[4] * scale);
+				fatigue = (int)((long)fatigue + (long)fatigueRate[SWINGING] * scale);
 			}
 
 			if (game.thePlayer.isSneaking()) {
 				resting = false;
-				fatigue = (int)((long)fatigue + (long)fatigueRate[5] * scale);
+				fatigue = (int)((long)fatigue + (long)fatigueRate[SNEAKING] * scale);
 			}
 
 			if (resting) {
-				fatigue = (int)((long)fatigue + (long)fatigueRate[6] * scale);
+				fatigue = (int)((long)fatigue + (long)fatigueRate[RESTING] * scale);
 			}
 		}
 
@@ -275,7 +305,7 @@ public class XieHunger implements ModInitializer {
 			this.fatigueOverflow += fatigue - fatigueMax;
 			int amt = this.fatigueOverflow / fatigueHeartScaleFactor;
 			if (amt >= 1) {
-				if (this.hurtPlayer(game, (long)amt)) {
+				if (this.hurtPlayer(game, amt)) {
 					fatigue = fatigueMax;
 				}
 
@@ -327,15 +357,11 @@ public class XieHunger implements ModInitializer {
 	}
 
 	private boolean hurtPlayer(Minecraft game, long scale) {
-		if ((long)game.thePlayer.health <= scale) {
+		boolean didHurt = game.thePlayer.hurt(null, (int) scale, DamageType.GENERIC);
+		if (!game.thePlayer.isAlive()){
 			resetState();
-			game.thePlayer.outOfWorld();
-			return false;
-		} else {
-			EntityPlayerSP player = game.thePlayer;
-			player.health = (int)((long)player.health - scale);
-			return true;
 		}
+		return didHurt;
 	}
 
 	private static void resetState() {
@@ -360,76 +386,6 @@ public class XieHunger implements ModInitializer {
 
 	public boolean inTheGreen() {
 		return hungerState <= 1 && thirstState <= 1 && fatigueState <= 1;
-	}
-	static {
-		fatigueStateFactor = fatigueMax / 4;
-		fatigueState = 0;
-		fatigueHeartScaleFactor = fatigueMax / 20;
-		fatigueRate = new int[]{0, 2, 5, 5, 5, 5, -1, -3};
-		hungerClockTickRate = 20;
-		timeOfLastTick = 0L;
-		hungerEnabled = true;
-		thirstEnabled = true;
-		fatigueEnabled = true;
-		useBars = true;
-		hunger = 0;
-		thirst = 0;
-		hungerState = 0;
-		thirstState = 0;
-		dying = false;
-		gryllsEnabled = false;
-		tickCounter = 0;
-		hungerTicks = 0;
-		thirstTicks = 0;
-		gryllsTick = 0;
-	}
-
-	public static TomlConfigHandler cfg;
-	static {
-		ModContainer thisMod = FabricLoader.getInstance().getModContainer("xiehunger").get();
-		Toml defaults = new Toml(thisMod.getMetadata().getName() + " " + thisMod.getMetadata().getVersion() + " settings");
-		defaults.addCategory("Toggles")
-			.addEntry("enableHunger", hungerEnabled)
-			.addEntry("enableThirst", thirstEnabled)
-			.addEntry("enableFatigue", fatigueEnabled)
-			.addEntry("Water drinkable by crounching", "waterDrinkable", waterDrinkable);
-		defaults.addCategory("Timings")
-			.addEntry("Game ticks per mod tick", "clockRate", hungerClockTickRate)
-			.addEntry("Ticks between increasing hunger or thirst", "hungerRate", hungerRate)
-			.addEntry("thirstRate", thirstRate);
-		defaults.addCategory("Saturated Benefits")
-			.addEntry("passiveRegen", passiveRegen);
-		defaults.addCategory("GUI")
-			.addEntry("useBars", useBars);
-		defaults.addCategory("Fatigue Rates")
-			.addEntry("constantRate", fatigueRate[0])
-			.addEntry("walkingRate", fatigueRate[1])
-			.addEntry("jumpingRate", fatigueRate[2])
-			.addEntry("swimmingRate", fatigueRate[3])
-			.addEntry("swingingRate", fatigueRate[4])
-			.addEntry("sneakingRate", fatigueRate[5])
-			.addEntry("restingRate", fatigueRate[6])
-			.addEntry("sleepingRate", fatigueRate[7]);
-
-		cfg = new TomlConfigHandler(MOD_ID, defaults);
-		hungerEnabled = cfg.getBoolean("Toggles.enableHunger");
-		thirstEnabled = cfg.getBoolean("Toggles.enableThirst");
-		fatigueEnabled = cfg.getBoolean("Toggles.enableFatigue");
-		waterDrinkable = cfg.getBoolean("Toggles.waterDrinkable");
-		hungerClockTickRate = cfg.getInt("Timings.clockRate");
-		hungerRate = cfg.getInt("Timings.hungerRate");
-		thirstRate = cfg.getInt("Timings.thirstRate");
-		passiveRegen = cfg.getBoolean("Saturated Benefits.passiveRegen");
-		useBars = cfg.getBoolean("GUI.useBars");
-
-		fatigueRate[0] = cfg.getInt("Fatigue Rates.constantRate");
-		fatigueRate[1] = cfg.getInt("Fatigue Rates.constantRate");
-		fatigueRate[2] = cfg.getInt("Fatigue Rates.walkingRate");
-		fatigueRate[3] = cfg.getInt("Fatigue Rates.jumpingRate");
-		fatigueRate[4] = cfg.getInt("Fatigue Rates.swimmingRate");
-		fatigueRate[5] = cfg.getInt("Fatigue Rates.swingingRate");
-		fatigueRate[6] = cfg.getInt("Fatigue Rates.sneakingRate");
-		fatigueRate[7] = cfg.getInt("Fatigue Rates.restingRate");
 	}
 
 // TODO Properly save data to level instead of seperate file
