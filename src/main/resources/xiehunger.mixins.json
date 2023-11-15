@@ -4,12 +4,12 @@
   "package": "useless.xiehunger.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "BlockCakeMixin",
-    "EntityPlayerMixin",
-    "GuiIngameMixin",
-    "ItemFoodMixin"
+    "core.BlockCakeMixin",
+    "core.EntityPlayerMixin",
+    "core.ItemFoodMixin"
   ],
   "client": [
+    "client.GuiIngameMixin"
   ],
   "injectors": {
     "defaultRequire": 1

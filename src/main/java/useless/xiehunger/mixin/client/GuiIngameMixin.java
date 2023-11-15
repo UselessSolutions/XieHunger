@@ -1,4 +1,4 @@
-package useless.xiehunger.mixin;
+package useless.xiehunger.mixin.client;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;

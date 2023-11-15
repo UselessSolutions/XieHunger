@@ -1,4 +1,4 @@
-package useless.xiehunger.mixin;
+package useless.xiehunger.mixin.core;
 
 import net.minecraft.core.entity.player.EntityPlayer;
 import net.minecraft.core.item.ItemFood;

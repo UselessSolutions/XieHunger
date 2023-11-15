@@ -1,6 +1,5 @@
-package useless.xiehunger.mixin;
+package useless.xiehunger.mixin.core;
 
-import com.b100.utils.StringUtils;
 import com.mojang.nbt.CompoundTag;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.entity.Entity;
@@ -44,13 +43,13 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 	@Unique
 	public int fatigueState = 0;
 	@Unique
-	private final Minecraft mc = Minecraft.getMinecraft(Minecraft.class);
-	@Unique
 	public int hunger = 0; // Save
 	@Unique
 	public int thirst = 0; // Save
 	@Unique
 	public int fatigue = 0; // Save
+	@Unique
+	private EntityPlayer thisAs = (EntityPlayer)(Object)this;
 	@Inject(method = "tick()V", at = @At("HEAD"))
 	private void tick(CallbackInfo ci){
 		if (++tickCounter >= XieHunger.hungerClockTickRate) {
@@ -61,19 +60,19 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 	@Unique
 	public void hungerClockTick() {
 		if (timeOfLastTick == 0L) {
-			timeOfLastTick = mc.theWorld.getWorldTime();
+			timeOfLastTick = world.getWorldTime();
 		}
 		XieHunger.LOGGER.info("Hunger" + hunger);
 		XieHunger.LOGGER.info("Thirst" + thirst);
 		XieHunger.LOGGER.info("Fatigue" + fatigue);
 
 		long scalingFactor = 1L;
-		long deltaTime = mc.theWorld.getWorldTime() - timeOfLastTick;
+		long deltaTime = world.getWorldTime() - timeOfLastTick;
 		if (deltaTime > (long)XieHunger.hungerClockTickRate) {
 			scalingFactor = deltaTime / (long)XieHunger.hungerClockTickRate;
 		}
 
-		timeOfLastTick = mc.theWorld.getWorldTime();
+		timeOfLastTick = world.getWorldTime();
 		if (XieHunger.passiveRegen && inTheGreen()) {
 			this.heal((int) scalingFactor);
 		}
@@ -126,7 +125,7 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 			}
 		}
 
-		if (XieHunger.waterDrinkable && mc.thePlayer.isInWater() && mc.thePlayer.isSneaking() && mc.thePlayer.input.moveStrafe  == 0.0F && mc.thePlayer.input.moveForward == 0.0F) {
+		if (XieHunger.waterDrinkable && thisAs.isInWater() && thisAs.isSneaking() && moveStrafing == 0.0F && moveForward == 0.0F) {
 			thirst -= XieHunger.hungerClockTickRate * XieHunger.thirstMax / 100;
 		}
 
@@ -143,8 +142,8 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 			}
 
 		} else {
-			if (mc.thePlayer.input.moveStrafe  != 0.0F || mc.thePlayer.input.moveForward != 0.0F) {
-				if (mc.thePlayer.isInWater()) {
+			if (moveStrafing != 0.0F || moveForward != 0.0F) {
+				if (thisAs.isInWater()) {
 					fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SWIMMING] * scale);
 				} else {
 					fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.WALKING] * scale);
@@ -153,17 +152,17 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 				resting = false;
 			}
 
-			if (mc.thePlayer.input.jump) {
+			if (isJumping) {
 				resting = false;
 				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.JUMPING] * scale);
 			}
 
-			if (mc.thePlayer.isSwinging) {
+			if (thisAs.isSwinging) {
 				resting = false;
 				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SWINGING] * scale);
 			}
 
-			if (mc.thePlayer.isSneaking()) {
+			if (thisAs.isSneaking()) {
 				resting = false;
 				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SNEAKING] * scale);
 			}
