@@ -4,13 +4,13 @@
   "package": "useless.xiehunger.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "client.NetClientHandlerMixin",
     "core.BlockCakeMixin",
     "core.EntityPlayerMixin",
     "core.ItemFoodMixin",
     "core.NetHandlerMixin"
   ],
   "client": [
+    "client.NetClientHandlerMixin",
     "client.GuiIngameMixin"
   ],
   "injectors": {
