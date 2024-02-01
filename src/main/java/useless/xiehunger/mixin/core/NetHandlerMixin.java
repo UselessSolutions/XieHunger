@@ -13,7 +13,7 @@ public abstract class NetHandlerMixin implements ICustomPackets {
 	public abstract void handleInvalidPacket(Packet packet);
 
 	@Override
-	public void handleHunger(PacketUpdateHunger packetUpdateHunger) {
+	public void xieHunger$handleHunger(PacketUpdateHunger packetUpdateHunger) {
 		handleInvalidPacket(packetUpdateHunger);
 	}
 }

@@ -8,6 +8,9 @@
   "authors": [
     "Useless"
   ],
+	"contributors": [
+		"Cookie Cakes (7.1 port)"
+	],
   "contact": {
     "homepage": "",
     "sources": ""
@@ -17,9 +20,15 @@
 
   "environment": "*",
   "entrypoints": {
-    "main": [
+		"main": [
+			"useless.xiehunger.XieHunger"
+		],
+		"beforeGameStart": [
         "useless.xiehunger.XieHunger"
-    ]
+    ],
+		"afterGameStart": [
+			"useless.xiehunger.XieHunger"
+		]
   },
   "mixins": [
     "xiehunger.mixins.json"
@@ -27,7 +36,7 @@
 
   "depends": {
     "fabricloader": ">=0.13.3",
-		"halplibe": ">=2.7.0"
+		"halplibe": ">=3.2.0"
   },
   "suggests": {
   }

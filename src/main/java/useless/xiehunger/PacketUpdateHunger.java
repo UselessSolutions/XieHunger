@@ -36,7 +36,7 @@ public class PacketUpdateHunger extends Packet {
 
 	@Override
 	public void processPacket(NetHandler netHandler) {
-		((ICustomPackets)netHandler).handleHunger(this);
+		((ICustomPackets)netHandler).xieHunger$handleHunger(this);
 	}
 
 	@Override
