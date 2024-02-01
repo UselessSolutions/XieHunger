@@ -63,7 +63,8 @@ difficulty:NORMAL
 thirdPersonView:0
 renderDistance:EXTREME
 limitFramerate:0
-customFpsLimit:75
+limitFramerate:3
+customFpsLimit:0
 guiScale:0
 overlayMode:0
 rotationOverlayMode:0
