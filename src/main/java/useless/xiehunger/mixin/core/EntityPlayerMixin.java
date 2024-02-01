@@ -14,12 +14,13 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import useless.xiehunger.FoodLists;
+import useless.xiehunger.HungerConfig;
 import useless.xiehunger.PacketUpdateHunger;
-import useless.xiehunger.interfaces.IHunger;
 import useless.xiehunger.XieHunger;
+import useless.xiehunger.interfaces.IHunger;
 
 @Mixin(value = EntityPlayer.class, remap = false)
-public class EntityPlayerMixin extends EntityLiving implements IHunger {
+public abstract class EntityPlayerMixin extends EntityLiving implements IHunger {
 	public EntityPlayerMixin(World world) {
 		super(world);
 	}
@@ -58,91 +59,94 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 	@Unique
 	private final EntityPlayer thisAs = (EntityPlayer)(Object)this;
 	@Inject(method = "onLivingUpdate()V", at = @At("HEAD"))
-	private void tick(CallbackInfo ci){
-		if (!world.isClientSide && ++tickCounter >= XieHunger.hungerClockTickRate) {
+	private void xie_tick(CallbackInfo ci){
+		if (!world.isClientSide && ++tickCounter >= HungerConfig.hungerClockTickRate) {
 			tickCounter = 0;
-			hungerClockTick();
+			xie_hungerClockTick();
 		}
 	}
 	@Unique
-	public void hungerClockTick() {
+	public void xie_hungerClockTick() {
 		prevHunger = hunger;
 		prevThirst = thirst;
 		prevFatigue = fatigue;
 		if (timeOfLastTick == 0L) {
 			timeOfLastTick = world.getWorldTime();
 		}
-		XieHunger.LOGGER.info("Hunger" + hunger);
-		XieHunger.LOGGER.info("Thirst" + thirst);
-		XieHunger.LOGGER.info("Fatigue" + fatigue);
+
+		if (HungerConfig.logBars) {
+			XieHunger.LOGGER.info("Hunger" + hunger);
+			XieHunger.LOGGER.info("Thirst" + thirst);
+			XieHunger.LOGGER.info("Fatigue" + fatigue);
+		}
 
 		long scalingFactor = 1L;
 		long deltaTime = world.getWorldTime() - timeOfLastTick;
-		if (deltaTime > (long)XieHunger.hungerClockTickRate) {
-			scalingFactor = deltaTime / (long)XieHunger.hungerClockTickRate;
+		if (deltaTime > (long)HungerConfig.hungerClockTickRate) {
+			scalingFactor = deltaTime / (long)HungerConfig.hungerClockTickRate;
 		}
 
 		timeOfLastTick = world.getWorldTime();
-		if (XieHunger.passiveRegen && inTheGreen()) {
-			this.heal((int) scalingFactor);
+		if (HungerConfig.passiveRegen && xieHunger$inTheGreen()) {
+			heal((int) scalingFactor);
 		}
 
-		if (XieHunger.hungerEnabled) {
-			this.doHunger(scalingFactor);
+		if (HungerConfig.hungerEnabled) {
+			this.xie_doHunger(scalingFactor);
 		}
 
-		if (XieHunger.thirstEnabled) {
-			this.doThirst(scalingFactor);
+		if (HungerConfig.thirstEnabled) {
+			this.xie_doThirst(scalingFactor);
 		}
 
-		if (XieHunger.fatigueEnabled) {
-			this.doFatigue(scalingFactor, deltaTime);
+		if (HungerConfig.fatigueEnabled) {
+			this.xie_doFatigue(scalingFactor, deltaTime);
 		}
 
-		stateUpdate();
+		xie_stateUpdate();
 	}
 	@Unique
-	private void doHunger(long scale) {
+	private void xie_doHunger(long scale) {
 		hungerTicks = (int)((long)hungerTicks + scale);
-		if (hungerTicks >= XieHunger.hungerRate) {
-			int amt = hungerTicks / XieHunger.hungerRate;
+		if (hungerTicks >= HungerConfig.hungerRate) {
+			int amt = hungerTicks / HungerConfig.hungerRate;
 			hungerTicks = 0;
 			hunger += amt;
-			if (hunger >= XieHunger.hungerMax) {
+			if (hunger >= HungerConfig.hungerMax) {
 				dying = true;
-				hurt(null, hunger - XieHunger.hungerMax, DamageType.GENERIC);
-				hunger = XieHunger.hungerMax;
+				hurt(null, hunger - HungerConfig.hungerMax, DamageType.GENERIC);
+				hunger = HungerConfig.hungerMax;
 			}
 		}
 
 	}
 
 	@Unique
-	private void doThirst(long scale) {
+	private void xie_doThirst(long scale) {
 		thirstTicks = (int)((long)thirstTicks + scale);
-		if (thirstTicks >= XieHunger.thirstRate) {
-			int amt = thirstTicks / XieHunger.thirstRate;
+		if (thirstTicks >= HungerConfig.thirstRate) {
+			int amt = thirstTicks / HungerConfig.thirstRate;
 			thirstTicks = 0;
 			thirst += amt;
-			if (thirst >= XieHunger.thirstMax) {
+			if (thirst >= HungerConfig.thirstMax) {
 				dying = true;
-				hurt(null, thirst - XieHunger.thirstMax, DamageType.GENERIC);
-				thirst = XieHunger.thirstMax;
+				hurt(null, thirst - HungerConfig.thirstMax, DamageType.GENERIC);
+				thirst = HungerConfig.thirstMax;
 			}
 		}
 
-		if (XieHunger.waterDrinkable && thisAs.isInWater() && thisAs.isSneaking() && moveStrafing == 0.0F && moveForward == 0.0F) {
-			thirst -= XieHunger.hungerClockTickRate * XieHunger.thirstMax / 100;
+		if (HungerConfig.waterDrinkable && thisAs.isInWater() && thisAs.isSneaking() && moveStrafing == 0.0F && moveForward == 0.0F) {
+			thirst -= HungerConfig.hungerClockTickRate * HungerConfig.thirstMax / 100;
 		}
 
 	}
 
 	@Unique
-	private void doFatigue(long scale, long deltaTime) {
-		fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.CONSTANT] * scale);
+	private void xie_doFatigue(long scale, long deltaTime) {
+		fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.CONSTANT] * scale);
 		boolean resting = true;
 		if (deltaTime >= 1200L) { // Full sleep
-			fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SLEEPING] * scale);
+			fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.SLEEPING] * scale);
 			if (fatigue < 0) {
 				fatigue = 0;
 			}
@@ -150,9 +154,9 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 		} else {
 			if (moveStrafing != 0.0F || moveForward != 0.0F) {
 				if (thisAs.isInWater()) {
-					fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SWIMMING] * scale);
+					fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.SWIMMING] * scale);
 				} else {
-					fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.WALKING] * scale);
+					fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.WALKING] * scale);
 				}
 
 				resting = false;
@@ -160,31 +164,31 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 
 			if (isJumping) {
 				resting = false;
-				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.JUMPING] * scale);
+				fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.JUMPING] * scale);
 			}
 
 			if (thisAs.isSwinging) {
 				resting = false;
-				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SWINGING] * scale);
+				fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.SWINGING] * scale);
 			}
 
 			if (thisAs.isSneaking()) {
 				resting = false;
-				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.SNEAKING] * scale);
+				fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.SNEAKING] * scale);
 			}
 
 			if (resting) {
-				fatigue = (int)((long)fatigue + (long)XieHunger.fatigueRate[XieHunger.RESTING] * scale);
+				fatigue = (int)((long)fatigue + (long)HungerConfig.fatigueRate[HungerConfig.RESTING] * scale);
 			}
 		}
 
-		if (fatigue >= XieHunger.fatigueMax) {
+		if (fatigue >= HungerConfig.fatigueMax) {
 			dying = true;
-			this.fatigueOverflow += fatigue - XieHunger.fatigueMax;
-			int amt = this.fatigueOverflow / XieHunger.fatigueHeartScaleFactor;
+			this.fatigueOverflow += fatigue - HungerConfig.fatigueMax;
+			int amt = this.fatigueOverflow / HungerConfig.fatigueHeartScaleFactor;
 			if (amt >= 1) {
 				if (hurt(null, amt, DamageType.GENERIC)) {
-					fatigue = XieHunger.fatigueMax;
+					fatigue = HungerConfig.fatigueMax;
 				}
 
 				this.fatigueOverflow = 0;
@@ -193,101 +197,101 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 
 	}
 	@Unique
-	public boolean inTheGreen() {
+	public boolean xieHunger$inTheGreen() {
 		return hungerState <= 1 && thirstState <= 1 && fatigueState <= 1;
 	}
 	@Unique
-	private void stateUpdate() {
+	private void xie_stateUpdate() {
 		if (hunger < 0) {
 			hunger = 0;
 		}
 
-		if (hunger > XieHunger.hungerMax) {
-			hunger = XieHunger.hungerMax;
+		if (hunger > HungerConfig.hungerMax) {
+			hunger = HungerConfig.hungerMax;
 		}
 
 		if (thirst < 0) {
 			thirst = 0;
 		}
 
-		if (thirst > XieHunger.thirstMax) {
-			thirst = XieHunger.thirstMax;
+		if (thirst > HungerConfig.thirstMax) {
+			thirst = HungerConfig.thirstMax;
 		}
 
 		if (fatigue < 0) {
 			fatigue = 0;
 		}
 
-		if (fatigue > XieHunger.fatigueMax) {
-			fatigue = XieHunger.fatigueMax;
+		if (fatigue > HungerConfig.fatigueMax) {
+			fatigue = HungerConfig.fatigueMax;
 		}
 
-		dying = hunger >= XieHunger.hungerMax || thirst >= XieHunger.thirstMax || fatigue >= XieHunger.fatigueMax;
+		dying = hunger >= HungerConfig.hungerMax || thirst >= HungerConfig.thirstMax || fatigue >= HungerConfig.fatigueMax;
 
-		hungerState = (int)Math.floor((double) hunger / XieHunger.hungerStateFactor);
-		thirstState = (int)Math.floor((double) thirst / XieHunger.thirstStateFactor);
-		fatigueScaled = fatigue * XieHunger.fatigueScaledMax / XieHunger.fatigueMax;
-		fatigueState = (int)Math.floor((double)fatigue / XieHunger.fatigueStateFactor);
+		hungerState = (int)Math.floor((double) hunger / HungerConfig.hungerStateFactor);
+		thirstState = (int)Math.floor((double) thirst / HungerConfig.thirstStateFactor);
+		fatigueScaled = fatigue * HungerConfig.fatigueScaledMax / HungerConfig.fatigueMax;
+		fatigueState = (int)Math.floor((double)fatigue / HungerConfig.fatigueStateFactor);
 
 		if (thisAs instanceof EntityPlayerMP && (hunger != prevHunger || thirst != prevThirst || fatigue != prevFatigue)){
 			((EntityPlayerMP)thisAs).playerNetServerHandler.sendPacket(new PacketUpdateHunger(hunger, thirst, fatigue));
 		}
 	}
 
-	public void feed(int amount) {
+	public void xieHunger$feed(int amount) {
 		hunger -= amount;
-		stateUpdate();
+		xie_stateUpdate();
 	}
 
 	@Unique
-	public int getHungerState() {
+	public int xieHunger$getHungerState() {
 		return hungerState;
 	}
 
 	@Unique
-	public int getThirstState() {
+	public int xieHunger$getThirstState() {
 		return thirstState;
 	}
 
 	@Unique
-	public int getFatigueState() {
+	public int xieHunger$getFatigueState() {
 		return fatigueState;
 	}
 
 	@Override
-	public int getFatigueScaled() {
+	public int xieHunger$getFatigueScaled() {
 		return fatigueScaled;
 	}
 
 	@Override
-	public int getHunger() {
+	public int xieHunger$getHunger() {
 		return hunger;
 	}
 
 	@Override
-	public int getThirst() {
+	public int xieHunger$getThirst() {
 		return thirst;
 	}
 
 	@Override
-	public int getFatigue() {
+	public int xieHunger$getFatigue() {
 		return fatigue;
 	}
 
 	@Override
-	public boolean isDying() {
+	public boolean xieHunger$isDying() {
 		return dying;
 	}
 
 	@Override
-	public void updateHunger(int hunger, int thirst, int fatigue) {
+	public void xieHunger$updateHunger(int hunger, int thirst, int fatigue) {
 		this.hunger = hunger;
 		this.thirst = thirst;
 		this.fatigue = fatigue;
-		stateUpdate();
+		xie_stateUpdate();
 	}
 
-	public void feed(int amount, ItemFood food) {
+	public void xieHunger$feed(int amount, ItemFood food) {
 		int hungerRelief = amount;
 		int thirstRelief = 0;
 		if (FoodLists.juicyList.contains(food)) {
@@ -302,7 +306,7 @@ public class EntityPlayerMixin extends EntityLiving implements IHunger {
 
 		hunger -= hungerRelief;
 		thirst -= thirstRelief;
-		stateUpdate();
+		xie_stateUpdate();
 	}
 	@Inject(method = "onDeath(Lnet/minecraft/core/entity/Entity;)V", at = @At("TAIL"))
 	private void resetHungerOnDeath(Entity entity, CallbackInfo ci){
