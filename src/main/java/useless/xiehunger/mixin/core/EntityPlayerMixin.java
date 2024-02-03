@@ -5,6 +5,7 @@ import net.minecraft.core.entity.Entity;
 import net.minecraft.core.entity.EntityLiving;
 import net.minecraft.core.entity.player.EntityPlayer;
 import net.minecraft.core.item.ItemFood;
+import net.minecraft.core.player.gamemode.Gamemode;
 import net.minecraft.core.util.helper.DamageType;
 import net.minecraft.core.world.World;
 import net.minecraft.server.entity.player.EntityPlayerMP;
@@ -74,7 +75,7 @@ public abstract class EntityPlayerMixin extends EntityLiving implements IHunger 
 			timeOfLastTick = world.getWorldTime();
 		}
 
-		if (HungerConfig.logBars) {
+		if (thisAs.gamemode != Gamemode.creative && HungerConfig.logBars) {
 			XieHunger.LOGGER.info("Hunger" + hunger);
 			XieHunger.LOGGER.info("Thirst" + thirst);
 			XieHunger.LOGGER.info("Fatigue" + fatigue);
@@ -91,16 +92,18 @@ public abstract class EntityPlayerMixin extends EntityLiving implements IHunger 
 			heal((int) scalingFactor);
 		}
 
-		if (HungerConfig.hungerEnabled) {
-			this.xie_doHunger(scalingFactor);
-		}
+		if (thisAs.gamemode != Gamemode.creative) {
+			if (HungerConfig.hungerEnabled) {
+				this.xie_doHunger(scalingFactor);
+			}
 
-		if (HungerConfig.thirstEnabled) {
-			this.xie_doThirst(scalingFactor);
-		}
+			if (HungerConfig.thirstEnabled) {
+				this.xie_doThirst(scalingFactor);
+			}
 
-		if (HungerConfig.fatigueEnabled) {
-			this.xie_doFatigue(scalingFactor, deltaTime);
+			if (HungerConfig.fatigueEnabled) {
+				this.xie_doFatigue(scalingFactor, deltaTime);
+			}
 		}
 
 		xie_stateUpdate();
