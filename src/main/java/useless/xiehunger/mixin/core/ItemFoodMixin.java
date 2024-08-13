@@ -15,16 +15,16 @@ import useless.xiehunger.interfaces.IHunger;
 public abstract class ItemFoodMixin {
 	@Shadow
 	protected int healAmount;
-	@Inject(method = "onItemRightClick(Lnet/minecraft/core/item/ItemStack;Lnet/minecraft/core/world/World;Lnet/minecraft/core/entity/player/EntityPlayer;)Lnet/minecraft/core/item/ItemStack;", at = @At(value = "HEAD"), cancellable = true)
+	@Inject(method = "onUseItem(Lnet/minecraft/core/item/ItemStack;Lnet/minecraft/core/world/World;Lnet/minecraft/core/entity/player/EntityPlayer;)Lnet/minecraft/core/item/ItemStack;", at = @At(value = "HEAD"), cancellable = true)
 	private void xie_healHungerWhenHungry(ItemStack itemstack, World world, EntityPlayer entityplayer, CallbackInfoReturnable<ItemStack> cir){
 		IHunger hPlayer = (IHunger)entityplayer;
 		if (hPlayer.xieHunger$getHunger() > 0 && itemstack.consumeItem(entityplayer)){
-			entityplayer.heal(this.healAmount);
+			entityplayer.eatFood((ItemFood)(Object)this);
 			hPlayer.xieHunger$feed(healAmount, (ItemFood)(Object)this);
 			cir.setReturnValue(itemstack);
 		}
 	}
-	@Inject(method = "onItemRightClick(Lnet/minecraft/core/item/ItemStack;Lnet/minecraft/core/world/World;Lnet/minecraft/core/entity/player/EntityPlayer;)Lnet/minecraft/core/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/entity/player/EntityPlayer;heal(I)V"))
+	@Inject(method = "onUseItem(Lnet/minecraft/core/item/ItemStack;Lnet/minecraft/core/world/World;Lnet/minecraft/core/entity/player/EntityPlayer;)Lnet/minecraft/core/item/ItemStack;", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/entity/player/EntityPlayer;eatFood(Lnet/minecraft/core/item/ItemFood;)V"))
 	private void xie_healHunger(ItemStack itemstack, World world, EntityPlayer entityplayer, CallbackInfoReturnable<ItemStack> cir){
 		((IHunger)entityplayer).xieHunger$feed(healAmount, (ItemFood)(Object)this);
 	}

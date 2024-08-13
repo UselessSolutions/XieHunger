@@ -4,7 +4,7 @@
   "package": "useless.xiehunger.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "core.BlockCakeMixin",
+    "core.BlockEdibleMixin",
     "core.EntityPlayerMixin",
     "core.ItemFoodMixin",
     "core.NetHandlerMixin"
